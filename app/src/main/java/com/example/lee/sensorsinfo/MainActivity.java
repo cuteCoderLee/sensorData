@@ -54,8 +54,14 @@ public class MainActivity extends Activity {
     private LocationManager locationManager;
     private Location location;
 
-    Context mContext;
+    // Storage Permissions
+    private static final int REQUEST_EXTERNAL_STORAGE = 1;
+    private static String[] PERMISSIONS_STORAGE = {
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+    };
 
+    Context mContext;
 
     //熄屏问题
     // private PowerManager.WakeLock wakeLock;
@@ -129,9 +135,7 @@ public class MainActivity extends Activity {
             return;
         }
 
-
         location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 1, new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
@@ -427,6 +431,17 @@ public class MainActivity extends Activity {
         if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
 //            File sdcardDir = Environment.getExternalStorageDirectory();
 //            File dir = new File(sdcardDir.toString() + "/mySensorData");
+            // Check if we have write permission
+            int permission = ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            if (permission != PackageManager.PERMISSION_GRANTED) {
+                Log.i(TAG,"do not have this permission!");
+                // We don't have permission so prompt the user
+                ActivityCompat.requestPermissions(
+                        MainActivity.this,
+                        PERMISSIONS_STORAGE,
+                        REQUEST_EXTERNAL_STORAGE
+                );
+            }
             String Dir = Environment.getExternalStorageDirectory().getAbsolutePath()+"/0data";
             File dir = new File(Dir);
             if (!dir.exists())
