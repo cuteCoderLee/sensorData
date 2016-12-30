@@ -22,6 +22,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -38,8 +39,12 @@ import java.io.UnsupportedEncodingException;
 import java.util.Calendar;
 import java.util.List;
 
+import static android.R.attr.permission;
+import static android.content.Context.LOCATION_SERVICE;
+import static android.content.Context.SENSOR_SERVICE;
 
-public class MainActivity extends Activity {
+
+public class MainActivity extends AppCompatActivity {
     private static final String TAG = "SensorInfo";
     //另起一个线程用来采样数据
     private HandlerThread saveInfoThread;
@@ -55,7 +60,7 @@ public class MainActivity extends Activity {
     private Location location;
 
     // Storage Permissions
-    private static final int REQUEST_EXTERNAL_STORAGE = 1;
+    private static final int REQUEST_EXTERNAL_STORAGE_CODE = 1;
     private static String[] PERMISSIONS_STORAGE = {
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE
@@ -428,28 +433,56 @@ public class MainActivity extends Activity {
         };
 
         //生成文件位置
-        if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-//            File sdcardDir = Environment.getExternalStorageDirectory();
-//            File dir = new File(sdcardDir.toString() + "/mySensorData");
-            // Check if we have write permission
-            int permission = ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-            if (permission != PackageManager.PERMISSION_GRANTED) {
-                Log.i(TAG,"do not have this permission!");
-                // We don't have permission so prompt the user
-                ActivityCompat.requestPermissions(
-                        MainActivity.this,
-                        PERMISSIONS_STORAGE,
-                        REQUEST_EXTERNAL_STORAGE
-                );
+//      File sdcardDir = Environment.getExternalStorageDirectory();
+//      File dir = new File(sdcardDir.toString() + "/mySensorData");
+        // Check if we have write permission
+        int permission = ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        permission |= ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
+        System.out.println("permission is " + permission);
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            //Log.e(TAG,"0ops do not have this permission!");
+            System.out.println("0ops do not have the permission");
+            // We don't have permission so prompt the user
+            Toast.makeText(this, "We don't have the permission, please make it available!", Toast.LENGTH_SHORT).show();
+            ActivityCompat.requestPermissions(
+                    this,
+                    PERMISSIONS_STORAGE,
+                    REQUEST_EXTERNAL_STORAGE_CODE
+            );
+        } else {
+            if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+                //Log.d(TAG, "permission is " + permission);
+                System.out.println("permission is " + permission);
+                String Dir = Environment.getExternalStorageDirectory().getAbsolutePath()+"/0data";
+                File dir = new File(Dir);
+                if (!dir.exists())
+                    dir.mkdir();
+                System.out.println(dir);
+                fileDir.setText("result's here! "+dir);
+                path = dir + "/" + getDate() + ".txt";//用系统时间为数据文件命名
+                //path = dir+"/"+"sensorInfo.txt";
             }
-            String Dir = Environment.getExternalStorageDirectory().getAbsolutePath()+"/0data";
-            File dir = new File(Dir);
-            if (!dir.exists())
-                dir.mkdir();
-            System.out.println(dir);
-            fileDir.setText("result's here! "+dir);
-            path = dir + "/" + getDate() + ".txt";//用系统时间为数据文件命名
-            //path = dir+"/"+"sensorInfo.txt";
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            //Log.v(TAG,"Permission: "+permissions[0]+ "was "+grantResults[0]);
+            System.out.println("Permission: " + permissions[0] + "was " + grantResults[0]);
+            if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+                String Dir = Environment.getExternalStorageDirectory().getAbsolutePath()+"/0data";
+                File dir = new File(Dir);
+                if (!dir.exists())
+                    dir.mkdir();
+                System.out.println(dir);
+                fileDir.setText("result's here! "+dir);
+                path = dir + "/" + getDate() + ".txt";//用系统时间为数据文件命名
+
+            } else {
+                Toast.makeText(this, "Permission denied!!!", Toast.LENGTH_LONG).show();
+            }
         }
     }
 
